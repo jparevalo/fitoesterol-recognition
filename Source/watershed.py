@@ -1,81 +1,67 @@
-'''
-Watershed segmentation
-=========
-This program demonstrates the watershed segmentation algorithm
-in OpenCV: watershed().
-Usage
------
-watershed.py [image filename]
-Keys
-----
-  1-7   - switch marker color
-  SPACE - update segmentation
-  r     - reset
-  a     - toggle autoupdate
-  ESC   - exit
-'''
-
-
-# Python 2/3 compatibility
-from __future__ import print_function
-
+# import the necessary packages
+from skimage.feature import peak_local_max
+from skimage.morphology import watershed
+from scipy import ndimage
 import numpy as np
+import argparse
 import cv2
-from common import Sketcher
 
-class App:
-    def __init__(self, fn):
-        self.img = cv2.imread(fn)
-        if self.img is None:
-            raise Exception('Failed to load image file: %s' % fn)
+# construct the argument parse and parse the arguments
+ap = argparse.ArgumentParser()
+ap.add_argument("-i", "--image", required=True,
+	help="path to input image")
+args = vars(ap.parse_args())
 
-        h, w = self.img.shape[:2]
-        self.markers = np.zeros((h, w), np.int32)
-        self.markers_vis = self.img.copy()
-        self.cur_marker = 1
-        self.colors = np.int32( list(np.ndindex(2, 2, 2)) ) * 255
+# load the image and perform pyramid mean shift filtering
+# to aid the thresholding step
+image = cv2.imread(args["image"])
+shifted = cv2.pyrMeanShiftFiltering(image, 21, 51)
+cv2.imshow("Input", image)
 
-        self.auto_update = True
-        self.sketch = Sketcher('img', [self.markers_vis, self.markers], self.get_colors)
+# convert the mean shift image to grayscale, then apply
+# Otsu's thresholding
+gray = cv2.cvtColor(shifted, cv2.COLOR_BGR2GRAY)
+thresh = cv2.threshold(gray, 0, 255,
+	cv2.THRESH_BINARY | cv2.THRESH_OTSU)[1]
+cv2.imshow("Thresh", thresh)
 
-    def get_colors(self):
-        return list(map(int, self.colors[self.cur_marker])), self.cur_marker
+# compute the exact Euclidean distance from every binary
+# pixel to the nearest zero pixel, then find peaks in this
+# distance map
+D = ndimage.distance_transform_edt(thresh)
+localMax = peak_local_max(D, indices=False, min_distance=20,
+	labels=thresh)
 
-    def watershed(self):
-        m = self.markers.copy()
-        cv2.watershed(self.img, m)
-        overlay = self.colors[np.maximum(m, 0)]
-        vis = cv2.addWeighted(self.img, 0.5, overlay, 0.5, 0.0, dtype=cv2.CV_8UC3)
-        cv2.imshow('watershed', vis)
+# perform a connected component analysis on the local peaks,
+# using 8-connectivity, then appy the Watershed algorithm
+markers = ndimage.label(localMax, structure=np.ones((3, 3)))[0]
+labels = watershed(-D, markers, mask=thresh)
+print("[INFO] {} unique segments found".format(len(np.unique(labels)) - 1))
+cv2.imshow("Wshed", D)
+# loop over the unique labels returned by the Watershed
+# algorithm
+for label in np.unique(labels):
+	# if the label is zero, we are examining the 'background'
+	# so simply ignore it
+	if label == 0:
+		continue
 
-    def run(self):
-        while cv2.getWindowProperty('img', 0) != -1 or cv2.getWindowProperty('watershed', 0) != -1:
-            ch = cv2.waitKey(50)
-            if ch == 27:
-                break
-            if ch >= ord('1') and ch <= ord('7'):
-                self.cur_marker = ch - ord('0')
-                print('marker: ', self.cur_marker)
-            if ch == ord(' ') or (self.sketch.dirty and self.auto_update):
-                self.watershed()
-                self.sketch.dirty = False
-            if ch in [ord('a'), ord('A')]:
-                self.auto_update = not self.auto_update
-                print('auto_update if', ['off', 'on'][self.auto_update])
-            if ch in [ord('r'), ord('R')]:
-                self.markers[:] = 0
-                self.markers_vis[:] = self.img
-                self.sketch.show()
-        cv2.destroyAllWindows()
+	# otherwise, allocate memory for the label region and draw
+	# it on the mask
+	mask = np.zeros(gray.shape, dtype="uint8")
+	mask[labels == label] = 255
 
+	# detect contours in the mask and grab the largest one
+	cnts = cv2.findContours(mask.copy(), cv2.RETR_EXTERNAL,
+		cv2.CHAIN_APPROX_SIMPLE)[-2]
+	c = max(cnts, key=cv2.contourArea)
 
-if __name__ == '__main__':
-    import sys
-    try:
-        fn = sys.argv[1]
-    except:
-        fn = '../data/fruits.jpg'
-    print(__doc__)
-    App(fn).run()
-Contact GitHub API Training Shop Blog About
+	# draw a circle enclosing the object
+	((x, y), r) = cv2.minEnclosingCircle(c)
+	cv2.circle(image, (int(x), int(y)), int(r), (0, 255, 0), 2)
+	cv2.putText(image, "#{}".format(label), (int(x) - 10, int(y)),
+		cv2.FONT_HERSHEY_SIMPLEX, 0.6, (0, 0, 255), 2)
 
+# show the output image
+cv2.imshow("Output", image)
+cv2.waitKey(0)
