@@ -59,7 +59,7 @@ for row in img:
 
 
 # Show in a window
-cv2.imshow('detected circles', img2)
+cv2.imshow('huarn image', img)
 
 img = cv2.cvtColor(img2, cv2.COLOR_GRAY2BGR)
 
@@ -69,17 +69,17 @@ rgb_img = cv2.merge([r,g,b])
 gray = cv2.cvtColor(img,cv2.COLOR_BGR2GRAY)
 ret, thresh = cv2.threshold(gray,200,255,cv2.THRESH_BINARY_INV+cv2.THRESH_OTSU)
 
-cv2.imshow('detectedes',thresh)
+
 # noise removal
 kernel = np.ones((1,1),np.uint8)
 #opening = cv2.morphologyEx(thresh,cv2.MORPH_OPEN,kernel, iterations = 2)
-closing = cv2.morphologyEx(thresh,cv2.MORPH_CLOSE,kernel, iterations = 10)
+closing = cv2.morphologyEx(thresh,cv2.MORPH_CLOSE,kernel, iterations = 20)
 
 # sure background area
-sure_bg = cv2.dilate(closing,kernel,iterations=10)
+sure_bg = cv2.dilate(closing,kernel,iterations=20)
 
 # Finding sure foreground area
-dist_transform = cv2.distanceTransform(sure_bg,cv2.DIST_L2,3)
+dist_transform = cv2.distanceTransform(sure_bg,cv2.DIST_L2,0)
 
 # Threshold
 ret, sure_fg = cv2.threshold(dist_transform,0.1*dist_transform.max(),255,160)
@@ -101,6 +101,6 @@ markers[unknown==255] = 0
 markers = cv2.watershed(img,markers)
 img[markers == -1] = [255,0,0]
 
-cv2.imshow('detected circles',img)
+cv2.imshow('dets',img)
 cv2.waitKey(0)
 cv2.destroyAllWindows()
