@@ -1,12 +1,19 @@
 import cv2
 import numpy as np
+import argparse
 
 tresh = 100
 max_tresh = 255
 
 
-# Detect edges using Threshold
-img = cv2.imread('../Pictures/img3.tif',0)
+ap = argparse.ArgumentParser()
+ap.add_argument("-i", "--image", required=True,
+                help="path to the input image")
+args = vars(ap.parse_args())
+
+# load the image and resize it to a smaller factor so that
+# the shapes can be approximated better
+img = cv2.imread(args["image"],0)
 img = cv2.medianBlur(img,5)
 cimg = cv2.cvtColor(img,cv2.COLOR_GRAY2BGR)
 
@@ -39,7 +46,7 @@ for i in range(len(contours)):
     #for( int j = 0; j < 4; j++ )
     #  line( drawing, rect_points[j], rect_points[(j+1)%4], color, 1, 8 );
 
-img = cv2.imread('../Pictures/img3.tif',0)
+img = cv2.imread(args["image"],0)
 img2 = thresh1
 
 skin_row_index = 0
@@ -109,12 +116,15 @@ circles = np.uint16(np.around(circles))
 print len(circles[0,:])
 for i in circles[0,:]:
     # draw the outer circle
-    cv2.circle(cimg,(i[0],i[1]),i[2],(0,255,0),2)
+    print i[2]
+    cv2.circle(cimg,(i[0],i[1]),i[2]+10,(255,255,255),-2)
     # draw the center of the circle
-    cv2.circle(cimg,(i[0],i[1]),2,(0,0,255),3)
+    #cv2.circle(cimg,(i[0],i[1]),2,(0,0,255),2)
 
 cv2.imshow('dets',img)
 cv2.imshow('detected circles',cimg)
 
 cv2.waitKey(0)
 cv2.destroyAllWindows()
+
+cv2.imwrite('first_iteration.png',cimg)

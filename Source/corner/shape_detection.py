@@ -20,8 +20,7 @@ ratio = image.shape[0] / float(resized.shape[0])
 # and threshold it
 gray = cv2.cvtColor(resized, cv2.COLOR_BGR2GRAY)
 blurred = cv2.GaussianBlur(gray, (5, 5), 0)
-thresh = cv2.adaptiveThreshold(blurred,255,cv2.ADAPTIVE_THRESH_GAUSSIAN_C,\
-            cv2.THRESH_BINARY,11,2)
+thresh = cv2.threshold(blurred,180,255,cv2.THRESH_BINARY)[1]
 cv2.imshow("Image", thresh)
 cv2.waitKey(0)
 
