@@ -1,7 +1,7 @@
 import cv2
 import numpy as np
 
-filename = 'img1.tif'
+filename = 'img1.png'
 img = cv2.imread(filename)
 gray = cv2.cvtColor(img,cv2.COLOR_BGR2GRAY)
 
@@ -22,8 +22,9 @@ corners = cv2.cornerSubPix(gray,np.float32(centroids),(5,5),(-1,-1),criteria)
 # Now draw them
 res = np.hstack((centroids,corners))
 res = np.int0(res)
+print res
 img[res[:,1],res[:,0]]=[0,0,255]
 img[res[:,3],res[:,2]] = [0,255,0]
 
-cv2.imwrite('subpixel5.png',img)
+cv2.imwrite('subpixel5.png',img[res[:,1],res[:,0]])
 
