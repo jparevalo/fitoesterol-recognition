@@ -1,4 +1,5 @@
 python recognition2.py --image $1
 cd corner/
-python shape_detection.py --image ../first_iteration.png
+python salt_and_peper.py --image ../first_iteration.png
+python shape_detection.py --image Seccond_iteration_salt_and_peper.png
 cd ..
