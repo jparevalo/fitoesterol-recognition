@@ -1,5 +1,6 @@
 # import the necessary packages
 import cv2
+import numpy as np
 
 
 class ShapeDetector:
@@ -10,9 +11,10 @@ class ShapeDetector:
         # initialize the shape name and approximate the contour
         shape = "unidentified"
         peri = cv2.arcLength(c, True)
+        radio = 2*peri/np.pi
         if peri < 20:
             shape = "pentagon"
-            return [shape, peri/2*3.1415]
+            return [shape, radio]
         approx = cv2.approxPolyDP(c, 0.04 * peri, True)
         # if the shape is a triangle, it will have 3 vertices
         if len(approx) == 3:
@@ -42,4 +44,4 @@ class ShapeDetector:
             shape = "Circulo"
 
         # return the name of the shape
-        return [shape, peri/2*3.1415]
+        return [shape, radio]

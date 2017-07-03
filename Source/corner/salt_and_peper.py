@@ -40,13 +40,6 @@ def fullMedia(image, f):
 
 new_image = fullMedia(img, f)
 seccond_image = fullMedia(new_image, f)
-cv2.imshow('image',img)
-cv2.waitKey(0)
-cv2.imshow('image',new_image)
-cv2.waitKey(0)
+
 cv2.imshow('image',seccond_image)
 cv2.imwrite('Seccond_iteration_salt_and_peper.png',seccond_image)
-cv2.waitKey(0)
-
-
-cv2.destroyAllWindows()

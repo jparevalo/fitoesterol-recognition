@@ -1,6 +1,9 @@
+# -*- coding: utf-8 -*-
+
 import cv2
 import numpy as np
 import argparse
+import imutils
 
 tresh = 100
 max_tresh = 255
@@ -47,6 +50,7 @@ for i in range(len(contours)):
     #  line( drawing, rect_points[j], rect_points[(j+1)%4], color, 1, 8 );
 
 img = cv2.imread(args["image"],0)
+original_img = cv2.imread(args["image"],0)
 img2 = thresh1
 
 skin_row_index = 0
@@ -62,11 +66,6 @@ for row in img:
             img2[skin_row_index][skin_pixel_index] = 255
         skin_pixel_index += 1
     skin_row_index += 1
-
-
-
-# Show in a window
-cv2.imshow('huarn image', img)
 
 img = cv2.cvtColor(img2, cv2.COLOR_GRAY2BGR)
 
@@ -102,8 +101,6 @@ ret, markers = cv2.connectedComponents(sure_fg)
 # Add one to all labels so that sure background is not 0, but 1
 markers = markers+1
 
-cv2.imshow('detected circles 2', img)
-
 img = img2
 img = cv2.medianBlur(img,5)
 cimg = cv2.cvtColor(img,cv2.COLOR_GRAY2BGR)
@@ -114,6 +111,24 @@ circles = cv2.HoughCircles(img,cv2.HOUGH_GRADIENT,1,20,
 
 circles = np.uint16(np.around(circles))
 radios = []
+resized = imutils.resize(original_img, width=300)
+ratio = img.shape[0] / float(resized.shape[0])
+for i in circles[0,:]:
+    M = cv2.moments(i)
+    if M["m00"] == 0:
+        M["m00"] = 0.000001
+    cX = int((M["m10"] / M["m00"]) * ratio)
+    cY = int((M["m01"] / M["m00"]) * ratio)
+    # draw the outer circle
+    cv2.circle(original_img,(i[0],i[1]),i[2],(0,0,255),2)
+    cv2.putText(original_img, 'Circle', (cX, cY), cv2.FONT_HERSHEY_SIMPLEX,
+                0.5, (0, 255, 0), 2)
+    radios.append(i[2])
+    # draw the center of the circle
+    #cv2.circle(cimg,(i[0],i[1]),2,(0,0,255),2)
+
+cv2.imwrite('original_first.png',original_img)
+
 for i in circles[0,:]:
     # draw the outer circle
     cv2.circle(cimg,(i[0],i[1]),i[2]+10,(255,255,255),-2)
@@ -121,14 +136,21 @@ for i in circles[0,:]:
     # draw the center of the circle
     #cv2.circle(cimg,(i[0],i[1]),2,(0,0,255),2)
 
-print '--------------------------------------------------------------'
-print 'CIRCULOS INICIALES',len(circles[0,:])
-print 'RADIO PROMEDIO INICIAL: ', sum(radios)/len(radios)
-print '--------------------------------------------------------------'
-cv2.imshow('dets',img)
-cv2.imshow('detected circles',cimg)
+height, width, channels = cimg.shape
+pix_to_nano_ratio = float(5)/height
+
+print '---------------------HOUGH--TRANSFORM-------------------------'
+print 'CIRCULOS INICIALES:',len(circles[0,:])
+print 'RADIO PROMEDIO INICIAL:', str(round(sum(radios)/len(radios),2))+' px ('+str(round(float(sum(radios)/len(radios))*pix_to_nano_ratio,2))+' μm)'
+cv2.imshow('dets',original_img)
 
 cv2.waitKey(0)
 cv2.destroyAllWindows()
 
 cv2.imwrite('first_iteration.png',cimg)
+file = open('circulos.txt', 'w')
+text = (str(len(circles[0,:])) + '\n' + str(sum(radios)/len(radios)))
+file.write(text)
+file.close()
+
+
