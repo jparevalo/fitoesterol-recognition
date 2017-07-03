@@ -113,14 +113,18 @@ circles = cv2.HoughCircles(img,cv2.HOUGH_GRADIENT,1,20,
                             param1=30,param2=28,minRadius=10,maxRadius=50)
 
 circles = np.uint16(np.around(circles))
-print len(circles[0,:])
+radios = []
 for i in circles[0,:]:
     # draw the outer circle
-    print i[2]
     cv2.circle(cimg,(i[0],i[1]),i[2]+10,(255,255,255),-2)
+    radios.append(i[2])
     # draw the center of the circle
     #cv2.circle(cimg,(i[0],i[1]),2,(0,0,255),2)
 
+print '--------------------------------------------------------------'
+print 'CIRCULOS INICIALES',len(circles[0,:])
+print 'RADIO PROMEDIO INICIAL: ', sum(radios)/len(radios)
+print '--------------------------------------------------------------'
 cv2.imshow('dets',img)
 cv2.imshow('detected circles',cimg)
 

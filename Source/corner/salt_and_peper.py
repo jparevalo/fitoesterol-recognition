@@ -24,7 +24,7 @@ def media(image, f, idx, idy, out):
 
 
 def fullMedia(image, f):
-        
+
 	out = []
 	for x in img:
         	out.append(x)
@@ -37,7 +37,7 @@ def fullMedia(image, f):
                 for y in range(y_steps):
                         media(image,f, x, y, out )
 	return out
-                        
+
 new_image = fullMedia(img, f)
 seccond_image = fullMedia(new_image, f)
 cv2.imshow('image',img)
